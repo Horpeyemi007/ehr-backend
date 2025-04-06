@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"backend/ehr/internal/config"
@@ -12,11 +12,12 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-type Application struct {
-	Config config.ServerConfig
+type application struct {
+	Config  config.ServerConfig
+	Patient patientHandler
 }
 
-func (app *Application) Mount() http.Handler {
+func (app *application) Mount() http.Handler {
 	r := chi.NewRouter()
 
 	// A good base middleware stack
@@ -25,9 +26,7 @@ func (app *Application) Mount() http.Handler {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	// Set a timeout value on the request context (ctx), that will signal
-	// through ctx.Done() that the request has timed out and further
-	// processing should be stopped.
+	// Set a timeout value on the request context (ctx)
 	r.Use(middleware.Timeout(60 * time.Second))
 
 	// Custom middleware for colored logging
@@ -35,6 +34,9 @@ func (app *Application) Mount() http.Handler {
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/health", app.healthCheckHandler)
+		r.Route("/patient", func(r chi.Router) {
+			r.Post("/create", app.Patient.CreatePatientHandler)
+		})
 	})
 	return r
 }
@@ -55,7 +57,7 @@ func ColoredLogger(next http.Handler) http.Handler {
 }
 
 // Run starts the server and it listen on the specified address
-func (app *Application) Run(mux http.Handler) error {
+func (app *application) Run(mux http.Handler) error {
 	server := &http.Server{
 		Addr:         app.Config.Addr,
 		Handler:      mux,
