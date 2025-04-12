@@ -30,12 +30,13 @@ func writeJSON(w http.ResponseWriter, status int, data any) error {
 	return json.NewEncoder(w).Encode(data)
 }
 
-func writeJSONError(w http.ResponseWriter, status int, message string) error {
+func writeJSONError(w http.ResponseWriter, status int, message string, code int) error {
 	type envelope struct {
 		Error string `json:"error"`
+		Code  int    `json:"code"`
 	}
 
-	return writeJSON(w, status, &envelope{Error: message})
+	return writeJSON(w, status, &envelope{Error: message, Code: code})
 }
 
 func jsonResponse(w http.ResponseWriter, status int, data any) error {
