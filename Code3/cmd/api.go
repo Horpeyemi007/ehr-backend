@@ -1,7 +1,9 @@
 package main
 
 import (
+	"backend/ehr/internal/auth"
 	"backend/ehr/internal/config"
+	"backend/ehr/internal/logging"
 	"backend/ehr/internal/model"
 	"log"
 	"net/http"
@@ -11,14 +13,20 @@ import (
 )
 
 type application struct {
-	config config.ServerConfig
-	store  model.Storage
+	config        config.ServerConfig
+	store         model.Storage
+	authenticator auth.Authenticator
 }
 
-func newApplication(cfg config.ServerConfig, store model.Storage) *application {
+func newApplication(
+	cfg config.ServerConfig,
+	store model.Storage,
+	auth auth.Authenticator,
+) *application {
 	return &application{
-		store:  store,
-		config: cfg,
+		store:         store,
+		config:        cfg,
+		authenticator: auth,
 	}
 }
 
@@ -31,7 +39,7 @@ func (app *application) Run(router *gin.Engine) {
 		IdleTimeout:  time.Minute,
 	}
 
-	log.Printf("Server running on %s", app.config.Addr)
+	logging.Logger.Infow("Server running on port", "addr", app.config.Addr)
 	if err := s.ListenAndServe(); err != nil {
 		log.Fatal("Server failed:", err)
 	}

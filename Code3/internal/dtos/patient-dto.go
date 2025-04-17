@@ -1,23 +1,33 @@
 package dtos
 
-// for response
+// for response data
 type PatientDTO struct {
-	ID        int64  `json:"id"`
-	FullName  string `json:"fullname"`
-	Email     string `json:"email"`
-	Slug      string `json:"slug"`
-	CreatedAt string `json:"created_at"`
+	Slug string `json:"slug"`
+}
+
+// for response data
+type GetAllPatientResponse struct {
+	Slug               string `json:"slug"`
+	FullName           string `json:"fullname"`
+	Email              string `json:"email"`
+	Gender             string `json:"gender"`
+	Phone              string `json:"phone"`
+	DOB                string `json:"dob"`
+	Address            string `json:"address"`
+	Occupation         string `json:"occupation"`
+	EmergencyName      string `json:"emergencyName"`
+	EmergencyTelephone string `json:"emergencyPhone"`
 }
 
 // for payload request
 type CreatePatientRequest struct {
-	FullName          string `json:"fullname" validate:"required"`
-	DOB               string `json:"dob" validate:"required"`
-	Gender            string `json:"gender" validate:"oneof=Male Female"`
-	Phone             string `json:"phone" validate:"required"`
-	Email             string `json:"email" validate:"required,email"`
-	Address           string `json:"address" validate:"required"`
-	Occupation        string `json:"occupation" validate:"required"`
-	GuardianName      string `json:"guardian_name" validate:"required"`
-	GuardianTelephone string `json:"guardian_telephone" validate:"required"`
+	FullName           string `json:"fullname" validate:"required"`
+	Email              string `json:"email" validate:"required,email"`
+	Gender             string `json:"gender" validate:"oneof=male female"`
+	Phone              string `json:"phone" validate:"required"`
+	DOB                string `json:"dob" validate:"required"`
+	Address            string `json:"address" validate:"required"`
+	Occupation         string `json:"occupation" validate:"required"`
+	EmergencyName      string `json:"emergencyName" validate:"required"`
+	EmergencyTelephone string `json:"emergencyPhone" validate:"required"`
 }

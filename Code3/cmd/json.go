@@ -13,6 +13,7 @@ func init() {
 
 func jsonResponse(c *gin.Context, status int, data any) {
 	c.JSON(status, gin.H{
-		"data": data,
+		"success": true,
+		"data":    data,
 	})
 }

@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 type DbConfig struct {
 	Addr         string
 	MaxOpenConns int
@@ -11,4 +13,15 @@ type ServerConfig struct {
 	Addr string
 	DB   DbConfig
 	Env  string
+	Auth AuthConfig
+}
+
+type AuthConfig struct {
+	Token TokenConfig
+}
+
+type TokenConfig struct {
+	Secret string
+	Exp    time.Duration
+	Iss    string
 }

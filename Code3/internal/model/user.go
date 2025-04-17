@@ -5,8 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-
-	"github.com/lib/pq"
 )
 
 // define the user struct model
@@ -19,7 +17,9 @@ type User struct {
 	Gender     string
 	Address    string
 	Occupation string
-	Role       []string
+	UserType   string
+	IdType     string
+	IdNumber   string
 	Slug       utils.Slug
 	CreatedAt  string
 	IsActive   bool
@@ -35,8 +35,8 @@ var (
 )
 
 func (u *userStore) Create(ctx context.Context, user *User) error {
-	query := `INSERT INTO users (fullname, email, phone, dob, gender, address, occupation, slug, role) 
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, fullname, email, slug, role, created_at`
+	query := `INSERT INTO users (fullname, email, phone, dob, gender, address, occupation, slug, user_type, id_type, id_number) 
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING slug`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeOutDuration)
 	defer cancel()
@@ -52,8 +52,10 @@ func (u *userStore) Create(ctx context.Context, user *User) error {
 		user.Address,
 		user.Occupation,
 		user.Slug.Value,
-		pq.Array(user.Role),
-	).Scan(&user.ID, &user.FullName, &user.Email, &user.Slug.Value, pq.Array(&user.Role), &user.CreatedAt)
+		user.UserType,
+		user.IdType,
+		user.IdNumber,
+	).Scan(&user.Slug.Value)
 
 	if err != nil {
 		switch {
@@ -65,8 +67,33 @@ func (u *userStore) Create(ctx context.Context, user *User) error {
 	}
 	return nil
 }
+
+func (a *userStore) Find(ctx context.Context, email string) (*User, error) {
+	query := `SELECT id, email FROM users
+	WHERE email = $1`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeOutDuration)
+	defer cancel()
+
+	user := &User{}
+	err := a.db.QueryRowContext(ctx, query, email).Scan(
+		&user.ID,
+		&user.Email,
+	)
+
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return nil, ErrNotFound
+		default:
+			return nil, err
+		}
+	}
+	return user, nil
+}
+
 func (s *userStore) GetByEmail(ctx context.Context, email string) (*User, error) {
-	query := `SELECT	id, fullname, email, slug, role FROM users
+	query := `SELECT	id, fullname, email, slug, user_type FROM users
 	WHERE email = $1`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeOutDuration)
@@ -79,7 +106,7 @@ func (s *userStore) GetByEmail(ctx context.Context, email string) (*User, error)
 		&user.FullName,
 		&user.Email,
 		&user.Slug.Value,
-		pq.Array(&user.Role),
+		&user.UserType,
 	)
 
 	if err != nil {

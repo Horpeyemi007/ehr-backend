@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS users (
   gender varchar(10) NOT NULL,
   address varchar(30) NOT NULL,
   occupation varchar(30),
-  role varchar(15)[] DEFAULT '{}',
+  user_type varchar(25),
+  id_type varchar(30),
+  id_number varchar(30),
   created_at timestamp(0) with time zone NOT NULL DEFAULT NOW(),
   is_active BOOLEAN NOT NULL DEFAULT FALSE
 );

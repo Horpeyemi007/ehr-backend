@@ -21,19 +21,27 @@ func (app *application) createPatientHandler() gin.HandlerFunc {
 			badRequestError(c, err)
 			return
 		}
+
+		// Check if the email exist on the db
+		isFound, _ := app.store.Patients.Find(c, payload.Email)
+		if isFound != nil {
+			badRequestError(c, model.ErrPatientDuplicateEmail)
+			return
+		}
+
 		patient := &model.Patient{
-			FullName:          payload.FullName,
-			DOB:               payload.DOB,
-			Gender:            payload.Gender,
-			Phone:             payload.Phone,
-			Email:             payload.Email,
-			Address:           payload.Address,
-			Occupation:        payload.Occupation,
-			GuardianName:      payload.GuardianName,
-			GuardianTelephone: payload.GuardianTelephone,
+			FullName:           payload.FullName,
+			DOB:                payload.DOB,
+			Gender:             payload.Gender,
+			Phone:              payload.Phone,
+			Email:              payload.Email,
+			Address:            payload.Address,
+			Occupation:         payload.Occupation,
+			EmergencyName:      payload.EmergencyName,
+			EmergencyTelephone: payload.EmergencyTelephone,
 		}
 		// generate random string (slug)
-		if err := patient.Slug.GenerateRandomString(5, true, false); err != nil {
+		if err := patient.Slug.GenerateRandomString(3, true, false); err != nil {
 			internalServerError(c, err)
 		}
 
@@ -49,6 +57,41 @@ func (app *application) createPatientHandler() gin.HandlerFunc {
 			}
 			return
 		}
-		jsonResponse(c, http.StatusCreated, "Patient Created")
+
+		response := &dtos.PatientDTO{Slug: patient.Slug.Value}
+		jsonResponse(c, http.StatusCreated, response)
+	}
+}
+
+func (app *application) getAllPatient() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		ctx := c.Request.Context()
+
+		patient, err := app.store.Patients.GetAll(ctx)
+
+		if err != nil {
+			internalServerError(c, err)
+			return
+		}
+
+		var response []dtos.GetAllPatientResponse
+		for _, p := range patient {
+			dto := dtos.GetAllPatientResponse{
+				Slug:               p.Slug.Value,
+				FullName:           p.FullName,
+				Email:              p.Email,
+				Gender:             p.Gender,
+				Phone:              p.Phone,
+				DOB:                p.DOB,
+				Address:            p.Address,
+				Occupation:         p.Occupation,
+				EmergencyName:      p.EmergencyName,
+				EmergencyTelephone: p.EmergencyTelephone,
+			}
+			response = append(response, dto)
+		}
+
+		jsonResponse(c, http.StatusOK, response)
 	}
 }

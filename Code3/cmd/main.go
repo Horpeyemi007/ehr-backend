@@ -1,12 +1,14 @@
 package main
 
 import (
+	"backend/ehr/internal/auth"
 	"backend/ehr/internal/config"
 	"backend/ehr/internal/db"
 	"backend/ehr/internal/env"
 	"backend/ehr/internal/logging"
 	"backend/ehr/internal/model"
 	"log"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -26,6 +28,13 @@ func main() {
 			MaxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "15m"),
 		},
 		Env: env.GetString("ENV", "dev"),
+		Auth: config.AuthConfig{
+			Token: config.TokenConfig{
+				Secret: env.GetString("AUTH_TOKEN_SECRET", "exampleSecret"),
+				Exp:    time.Hour * 24 * 3, // 3 days
+				Iss:    "ehr",
+			},
+		},
 	}
 	// Initialize Global Logger
 	logging.InitializeLogger()
@@ -42,7 +51,12 @@ func main() {
 
 	// initialize the db connection
 	store := model.InitializeStore(pool)
-	app := newApplication(cfg, store)
+	jwtAuthenticator := auth.NewJWTAuthenticator(
+		cfg.Auth.Token.Secret,
+		cfg.Auth.Token.Iss,
+		cfg.Auth.Token.Iss,
+	)
+	app := newApplication(cfg, store, jwtAuthenticator)
 
 	router := setupRouter(app)
 	app.Run(router)

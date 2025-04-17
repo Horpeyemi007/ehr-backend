@@ -42,3 +42,12 @@ func conflictResponse(c *gin.Context, err error) {
 		"code":  409,
 	})
 }
+
+// error method to send unauthorized error message
+func unauthorizedErrorResponse(c *gin.Context, err error) {
+	logging.Logger.Errorw("unauthorized error", "method", c.Request.Method, "path", c.Request.URL.Path, "error", err.Error())
+	c.JSON(http.StatusUnauthorized, gin.H{
+		"error": "unauthorized",
+		"code":  401,
+	})
+}

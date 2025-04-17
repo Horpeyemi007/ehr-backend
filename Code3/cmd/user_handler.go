@@ -22,6 +22,13 @@ func (app *application) createUserHandler() gin.HandlerFunc {
 			return
 		}
 
+		// Check if the email exist on the db
+		isFound, _ := app.store.Users.Find(c, payload.Email)
+		if isFound != nil {
+			badRequestError(c, model.ErrUserDuplicateEmail)
+			return
+		}
+
 		user := &model.User{
 			FullName:   payload.FullName,
 			Email:      payload.Email,
@@ -30,11 +37,13 @@ func (app *application) createUserHandler() gin.HandlerFunc {
 			Gender:     payload.Gender,
 			Address:    payload.Address,
 			Occupation: payload.Occupation,
-			Role:       payload.Role,
+			UserType:   payload.UserType,
+			IdType:     payload.IdType,
+			IdNumber:   payload.IdNumber,
 		}
 
 		// generate random string (slug)
-		if err := user.Slug.GenerateRandomString(5, true, false); err != nil {
+		if err := user.Slug.GenerateRandomString(3, true, false); err != nil {
 			internalServerError(c, err)
 		}
 
