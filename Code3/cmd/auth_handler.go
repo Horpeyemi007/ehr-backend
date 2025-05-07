@@ -3,6 +3,7 @@ package main
 import (
 	"backend/ehr/internal/dtos"
 	"backend/ehr/internal/model"
+	"backend/ehr/internal/utils"
 	"net/http"
 	"time"
 
@@ -10,12 +11,12 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func (app *application) adminLoginAuth() gin.HandlerFunc {
+func (app *application) entityLoginAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var payload dtos.AdminLoginRequest
+		var payload dtos.EntityLoginRequest
 		// read the payload
 		if err := c.ShouldBindJSON(&payload); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			badRequestError(c, err)
 			return
 		}
 		// Validate the payload
@@ -26,7 +27,7 @@ func (app *application) adminLoginAuth() gin.HandlerFunc {
 
 		ctx := c.Request.Context()
 
-		admin, err := app.store.Admins.GetByEmail(ctx, payload.Email)
+		entity, err := app.store.Entity.FindByEmail(ctx, payload.Email)
 
 		if err != nil {
 			switch err {
@@ -39,34 +40,35 @@ func (app *application) adminLoginAuth() gin.HandlerFunc {
 		}
 
 		// check for password validity
-		if err := admin.Password.Compare(payload.Password); err != nil {
+		if err := entity.Password.Compare(payload.Password); err != nil {
 			unauthorizedErrorResponse(c, err)
 			return
 		}
-
+		// generate the csrf token
+		csrfToken := utils.GenerateCSRFToken()
 		// generate the token -< add claims
 		claims := jwt.MapClaims{
-			"sub": admin.ID,
-			"exp": time.Now().Add(app.config.Auth.Token.Exp).Unix(),
-			"iat": time.Now().Unix(),
-			"nbf": time.Now().Unix(),
-			"iss": app.config.Auth.Token.Iss,
-			"aud": app.config.Auth.Token.Iss,
+			"sub":      entity.ID,
+			"exp":      time.Now().Add(app.config.Auth.Token.Exp).Unix(),
+			"iat":      time.Now().Unix(),
+			"iss":      app.config.Auth.Token.Iss,
+			"aud":      app.config.Auth.Token.Iss,
+			"userType": entity.UserType,
+			"csrf":     csrfToken,
 		}
 		token, err := app.authenticator.GenerateToken(claims)
 		if err != nil {
 			internalServerError(c, err)
 			return
 		}
-
-		response := &dtos.AdminDTO{
-			ID:       admin.ID,
-			FullName: admin.FullName,
-			Email:    admin.Email,
-			Slug:     admin.Slug.Value,
+		response := &dtos.EntityDTO{
+			ID:       entity.ID,
+			FullName: entity.FullName,
+			Email:    entity.Email,
+			Slug:     entity.EntityInformation.Slug.Value,
 			Token:    token,
 		}
-
+		app.setCSRFToken(c, csrfToken)
 		jsonResponse(c, http.StatusOK, response)
 	}
 }

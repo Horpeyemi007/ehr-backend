@@ -1,27 +1,10 @@
 package model
 
 import (
-	"backend/ehr/internal/utils"
 	"context"
 	"database/sql"
 	"errors"
 )
-
-// define the patient struct model
-type Patient struct {
-	ID                 int64
-	FullName           string
-	Email              string
-	DOB                string
-	Gender             string
-	Phone              string
-	Slug               utils.Slug
-	Address            string
-	Occupation         string
-	EmergencyName      string
-	EmergencyTelephone string
-	CreatedAt          string
-}
 
 // define a db instance patient struct
 type patientStore struct {
@@ -33,6 +16,12 @@ var (
 )
 
 func (p *patientStore) Create(ctx context.Context, patient *Patient) error {
+	// check if the patient already exist in the record
+	isFound, _ := p.FindByEmail(ctx, patient.Email)
+	if isFound != nil {
+		return ErrPatientDuplicateEmail
+	}
+
 	query := `INSERT INTO patients (fullname, dob, gender, phone, email, slug, address, occupation, emergency_name, emergency_phone)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING slug`
 
@@ -56,18 +45,13 @@ func (p *patientStore) Create(ctx context.Context, patient *Patient) error {
 	).Scan(&patient.Slug.Value)
 
 	if err != nil {
-		switch {
-		case err.Error() == "pq: duplicate key value violates unique constraint \"patients_email_key\"":
-			return ErrPatientDuplicateEmail
-		default:
-			return err
-		}
+		return err
 	}
 	return nil
 }
 
-func (a *patientStore) Find(ctx context.Context, email string) (*Patient, error) {
-	query := `SELECT id, email FROM patients
+func (a *patientStore) FindByEmail(ctx context.Context, email string) (*Patient, error) {
+	query := `SELECT id, email, slug FROM patients
 	WHERE email = $1`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeOutDuration)
@@ -77,6 +61,7 @@ func (a *patientStore) Find(ctx context.Context, email string) (*Patient, error)
 	err := a.db.QueryRowContext(ctx, query, email).Scan(
 		&patient.ID,
 		&patient.Email,
+		&patient.Slug.Value,
 	)
 
 	if err != nil {
@@ -108,16 +93,8 @@ func (p *patientStore) GetAll(ctx context.Context) ([]Patient, error) {
 	for rows.Next() {
 		var p Patient
 		err := rows.Scan(
-			&p.Slug.Value,
-			&p.FullName,
-			&p.Email,
-			&p.Phone,
-			&p.DOB,
-			&p.Gender,
-			&p.Address,
-			&p.Occupation,
-			&p.EmergencyName,
-			&p.EmergencyTelephone,
+			&p.Slug.Value, &p.FullName, &p.Email, &p.Phone, &p.DOB,
+			&p.Gender, &p.Address, &p.Occupation, &p.EmergencyName, &p.EmergencyTelephone,
 		)
 		if err != nil {
 			return nil, err

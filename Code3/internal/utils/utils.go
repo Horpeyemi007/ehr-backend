@@ -2,6 +2,7 @@ package utils
 
 import (
 	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"math/big"
 	"time"
@@ -11,7 +12,7 @@ type Slug struct {
 	Value string
 }
 
-func (s *Slug) GenerateRandomString(length int, useAlphabetic, useNumeric bool) error {
+func (s *Slug) GenerateSlug(length int, useAlphabetic, useNumeric bool) error {
 	alphabet := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	digits := "0123456789"
 
@@ -43,4 +44,10 @@ func (s *Slug) GenerateRandomString(length int, useAlphabetic, useNumeric bool) 
 	s.Value = randomString
 
 	return nil
+}
+
+func GenerateCSRFToken() string {
+	b := make([]byte, 50)
+	_, _ = rand.Read(b)
+	return base64.StdEncoding.EncodeToString(b)
 }

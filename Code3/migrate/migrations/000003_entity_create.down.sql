@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS entity_information;
+DROP TABLE IF EXISTS entity;
+DROP EXTENSION IF EXISTS citext;

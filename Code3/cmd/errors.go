@@ -51,3 +51,12 @@ func unauthorizedErrorResponse(c *gin.Context, err error) {
 		"code":  401,
 	})
 }
+
+// error method to send forbidden error message
+func forbiddenErrorResponse(c *gin.Context, err error) {
+	logging.Logger.Errorw("forbidden error", "method", c.Request.Method, "path", c.Request.URL.Path, "error", err.Error())
+	c.JSON(http.StatusForbidden, gin.H{
+		"error": "forbidden",
+		"code":  403,
+	})
+}

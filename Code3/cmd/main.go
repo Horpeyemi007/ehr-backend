@@ -30,9 +30,10 @@ func main() {
 		Env: env.GetString("ENV", "dev"),
 		Auth: config.AuthConfig{
 			Token: config.TokenConfig{
-				Secret: env.GetString("AUTH_TOKEN_SECRET", "exampleSecret"),
-				Exp:    time.Hour * 24 * 3, // 3 days
-				Iss:    "ehr",
+				PrivateKeyPath: env.GetPrivateKeyPath(),
+				PublicKeyPath:  env.GetPublicKeyPath(),
+				Exp:            time.Hour * 24 * 3, // 3 days
+				Iss:            "ehr",
 			},
 		},
 	}
@@ -52,7 +53,8 @@ func main() {
 	// initialize the db connection
 	store := model.InitializeStore(pool)
 	jwtAuthenticator := auth.NewJWTAuthenticator(
-		cfg.Auth.Token.Secret,
+		cfg.Auth.Token.PrivateKeyPath,
+		cfg.Auth.Token.PublicKeyPath,
 		cfg.Auth.Token.Iss,
 		cfg.Auth.Token.Iss,
 	)

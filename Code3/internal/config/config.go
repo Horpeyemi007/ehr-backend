@@ -21,7 +21,8 @@ type AuthConfig struct {
 }
 
 type TokenConfig struct {
-	Secret string
-	Exp    time.Duration
-	Iss    string
+	PrivateKeyPath string
+	PublicKeyPath  string
+	Exp            time.Duration
+	Iss            string
 }

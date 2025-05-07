@@ -10,31 +10,38 @@ import (
 )
 
 var (
-	ErrNotFound          = errors.New("resource not found")
+	ErrNotFound          = errors.New("no record found")
 	QueryTimeOutDuration = time.Second * 5
 	ErrConflict          = errors.New("resource already exists")
+	ErrRoleNameConflict  = errors.New("role name already exists")
 	ErrPasswordMismatch  = errors.New("password does not match")
+	ErrNoChangesMade     = errors.New("no changes made")
 )
-
-type password struct {
-	text string
-	hash []byte
-}
 
 type Storage struct {
 	Patients interface {
 		Create(context.Context, *Patient) error
-		Find(context.Context, string) (*Patient, error)
-		GetAll(ctx context.Context) ([]Patient, error)
+		FindByEmail(context.Context, string) (*Patient, error)
+		GetAll(context.Context) ([]Patient, error)
 	}
 	Users interface {
+		CreateAdmin(context.Context, *User) error
 		Create(context.Context, *User) error
-		Find(context.Context, string) (*User, error)
+		FindById(context.Context, string) (*User, error)
+		VerifyPermission(context.Context, int64, []string) (bool, error)
 	}
-	Admins interface {
-		Create(context.Context, *Admin) error
-		GetByEmail(context.Context, string) (*Admin, error)
-		Find(context.Context, string) (*Admin, error)
+	Entity interface {
+		Create(context.Context, *Entity) error
+		FindByEmail(context.Context, string) (*Entity, error)
+		FindById(context.Context, string) (*Entity, error)
+		CreateRole(context.Context, *Role) error
+		AssignPermissionToRole(context.Context, string, []string) error
+		AssignRoleToUser(context.Context, string, string) error
+		AssignPermissionToUser(context.Context, string, []string) error
+		RemovePermissionFromUser(context.Context, string, string) error
+		RemovePermissionFromRole(context.Context, string, string) error
+		GetAllRoles(context.Context) ([]Role, error)
+		GetAllPermissions(context.Context) ([]Permission, error)
 	}
 }
 
@@ -44,7 +51,7 @@ func InitializeStore(db *sql.DB) Storage {
 	return Storage{
 		Patients: &patientStore{db},
 		Users:    &userStore{db},
-		Admins:   &adminStore{db},
+		Entity:   &entityStore{db},
 	}
 }
 
@@ -71,4 +78,20 @@ func (p *password) Compare(text string) error {
 		}
 	}
 	return nil
+}
+
+// wrapper function using sql transactions
+func withTransaction(ctx context.Context, db *sql.DB, fn func(*sql.Tx) error) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	if err := fn(tx); err != nil {
+		// rollback on an error
+		_ = tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }

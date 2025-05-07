@@ -20,6 +20,19 @@ type CreateUserRequest struct {
 	Address    string `json:"address" validate:"required"`
 	Occupation string `json:"occupation" validate:"required"`
 	UserType   string `json:"userType" validate:"required"`
-	IdType     string `json:"idType" validate`
-	IdNumber   string `json:"idNumber" validate`
+	IdType     string `json:"idType"`
+	IdNumber   string `json:"idNumber"`
+}
+
+type CreateAdminUserRequest struct {
+	FullName   string `json:"fullname" validate:"required"`
+	Email      string `json:"email" validate:"required,email"`
+	Phone      string `json:"phone" validate:"required"`
+	DOB        string `json:"dob" validate:"required"`
+	Gender     string `json:"gender" validate:"required"`
+	Address    string `json:"address" validate:"required"`
+	Occupation string `json:"occupation" validate:"required"`
+	UserType   string `json:"userType" validate:"required,oneof=admin"`
+	IdType     string `json:"idType"`
+	IdNumber   string `json:"idNumber"`
 }

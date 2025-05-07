@@ -13,7 +13,7 @@ func (app *application) createPatientHandler() gin.HandlerFunc {
 		var payload dtos.CreatePatientRequest
 		// read the payload
 		if err := c.ShouldBindJSON(&payload); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			badRequestError(c, err)
 			return
 		}
 		// Validate the payload
@@ -23,7 +23,7 @@ func (app *application) createPatientHandler() gin.HandlerFunc {
 		}
 
 		// Check if the email exist on the db
-		isFound, _ := app.store.Patients.Find(c, payload.Email)
+		isFound, _ := app.store.Patients.FindByEmail(c, payload.Email)
 		if isFound != nil {
 			badRequestError(c, model.ErrPatientDuplicateEmail)
 			return
@@ -41,7 +41,7 @@ func (app *application) createPatientHandler() gin.HandlerFunc {
 			EmergencyTelephone: payload.EmergencyTelephone,
 		}
 		// generate random string (slug)
-		if err := patient.Slug.GenerateRandomString(3, true, false); err != nil {
+		if err := patient.Slug.GenerateSlug(3, true, false); err != nil {
 			internalServerError(c, err)
 		}
 

@@ -11,6 +11,10 @@ func init() {
 	Validate = validator.New(validator.WithPrivateFieldValidation())
 }
 
+func (app *application) setCSRFToken(c *gin.Context, csrfValue string) {
+	c.Header("X-CSRF-Token", csrfValue)
+}
+
 func jsonResponse(c *gin.Context, status int, data any) {
 	c.JSON(status, gin.H{
 		"success": true,

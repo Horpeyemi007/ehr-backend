@@ -24,3 +24,11 @@ func GetInt(key string, defaultValue int) int {
 	}
 	return intValue
 }
+
+func GetPrivateKeyPath() string {
+	return GetString("PRIVATE_KEY_PATH", "internal/keys/private.pem")
+}
+
+func GetPublicKeyPath() string {
+	return GetString("PUBLIC_KEY_PATH", "internal/keys/public.pem")
+}
